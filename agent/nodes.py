@@ -47,12 +47,17 @@ def generate_response(state: AgentState) -> AgentState:
     context = state.get("retrieved_context", "")
     intent = state.get("intent", "greeting")
 
-    system_prompt = f"""You are a helpful sales assistant for AutoStream, an AI video editing SaaS platform.
-Be friendly, concise, and helpful.
+    system_prompt = f"""You are a sales assistant ONLY for AutoStream, an AI video editing SaaS platform.
 
-{"Use this knowledge base context to answer accurately:" + chr(10) + context if context else ""}
+STRICT RULES:
+- ONLY talk about AutoStream's product, pricing, and policies
+- NEVER ask about cars, personal life, or anything unrelated
+- If asked something unrelated, politely redirect back to AutoStream
+- Keep responses short and focused
 
-If a user seems interested in signing up (high intent), naturally move the conversation toward collecting their details."""
+{"Use this knowledge base to answer accurately:" + chr(10) + context if context else ""}
+
+If the user seems interested in signing up, guide them toward sharing their name, email, and creator platform (YouTube, Instagram, etc.)."""
 
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
     response = llm.invoke(messages)
@@ -68,11 +73,11 @@ def collect_lead_info(state: AgentState) -> AgentState:
 
     # Figure out what's still missing
     if not name:
-        question = "Great! I'd love to get you started. Could you share your full name?"
+        question = "I'd love to get you started with AutoStream! Could you share your full name?"
     elif not email:
-        question = f"Thanks {name}! What's your email address?"
+        question = f"Thanks {name}! What's your email address so we can set up your account?"
     elif not platform:
-        question = f"Almost there! Which platform do you mainly create content on? (e.g. YouTube, Instagram, TikTok)"
+        question = f"Almost done! Which content platform do you mainly use — YouTube, Instagram, TikTok, or another?"
     else:
         # All collected — this node shouldn't be called, but handle gracefully
         question = "Let me finalize your registration now!"
